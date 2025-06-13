@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import "./App.scss";
-import Chatbot from "./components/Chatbot";
+// import Chatbot from "./components/Chatbot";
 
 const App = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -42,7 +42,6 @@ const App = () => {
 
   return (
     <div className="container">
-    
       <main>
         <form onSubmit={handleUpload} className="upload-container">
           <div className="topic-container">
@@ -89,7 +88,23 @@ const App = () => {
         </section>
       </main>
 
-      <Chatbot />
+      {/* <Chatbot /> */}
+      <iframe
+        src="http://localhost:5173"
+        frameBorder="0"
+        style={{
+          position: "fixed",
+          right: "0px",
+          bottom: "0px",
+          width: "420px",
+          height: "520px",
+          border: "none",
+          borderRadius: "12px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+          zIndex: 1000,
+          background: "transparent",
+        }}
+      />
     </div>
   );
 };
