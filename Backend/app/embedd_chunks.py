@@ -1,9 +1,6 @@
 from sentence_transformers import SentenceTransformer
-import numpy as np
 
-def embedd_chunks(chunks):
-    model = SentenceTransformer('all-mpnet-base-v2')
-    
+def embedd_chunks(chunks ,model):    
     new_chunks = []
 
     for chunk in chunks:

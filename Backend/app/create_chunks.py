@@ -1,6 +1,6 @@
 def split_text(text):
-    chunk_size=50
-    overlap=15
+    chunk_size=500
+    overlap=100
     words = text.split()
     chunks = []
     start = 0

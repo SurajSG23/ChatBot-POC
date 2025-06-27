@@ -29,5 +29,3 @@ def faiss_store(chunks, original_texts, source):
 
     with open(f"FAISS/{corpus_path}", "wb") as f:
         pickle.dump(original_texts, f)
-
-    print("FAISS index and corpus updated successfully.")
