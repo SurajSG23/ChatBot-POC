@@ -91,10 +91,6 @@ const Chatbot: React.FC = () => {
   ]);
   const { transcript, listening, resetTranscript } = useSpeechRecognition();
   const [inputValue, setInputValue] = useState("");
-  const toggleChatbot = () => {
-    setIsOpen(!isOpen);
-    messages[messages.length - 1].newMsg = false;
-  };
   const model = "qwen3-32b-genwai";
   const [project, setProject] = useState("Default");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -103,90 +99,72 @@ const Chatbot: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [suggestion, setSuggestion] = useState<string>("");
 
+  // Toggle chatbot visibility
+  const toggleChatbot = () => {
+    setIsOpen(!isOpen);
+    messages[messages.length - 1].newMsg = false;
+  };
+
+  // Sync speech recognition transcript with input
   useEffect(() => {
-    if (transcript) {
-      setInputValue(transcript);
-    }
+    if (transcript) setInputValue(transcript);
   }, [transcript]);
 
+  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Reset chat to initial state
   const clearChat = () => {
-    setMessages([]);
+    setMessages([
+      { text: "Hello! How can I help you today?", isUser: false, newMsg: true },
+    ]);
     localStorage.clear();
-    const newMessages = [
-      {
-        text: "Hello! How can I help you today?",
-        isUser: false,
-        newMsg: true,
-      },
-    ];
-    setMessages(newMessages);
-    localStorage.setItem("chatMessages", JSON.stringify(newMessages));
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 500);
-    }
-  }, [isOpen]);
-
+  // Initial load: fetch projects and saved messages
   useEffect(() => {
     fetchProjects();
     const msg = localStorage.getItem("chatMessages");
     setMessages(msg ? JSON.parse(msg) : []);
   }, []);
 
+  // Handle Enter key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSendMessage();
-    }
+    if (e.key === "Enter") handleSendMessage();
   };
 
+  // Save messages to localStorage
   const setNewMessages = (chatStr: string) => {
     localStorage.setItem("chatMessages", chatStr);
     const msg = localStorage.getItem("chatMessages");
     setMessages(msg ? JSON.parse(msg) : []);
   };
 
+  // Send message to backend and update chat
   const handleSendMessage = async () => {
     setIsSending(true);
     SpeechRecognition.stopListening();
+
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/recievePrompt/",
         { inputValue, model, project },
-        {
-          headers: {
-            "Content-Type": "text/plain",
-          },
-          withCredentials: true,
-        }
+        { headers: { "Content-Type": "text/plain" }, withCredentials: true }
       );
-      if (inputValue.trim()) {
-        const updatedMessages = messages.map((msg) => ({
-          ...msg,
-          newMsg: false,
-        }));
 
+      if (inputValue.trim()) {
         const newMessages = [
-          ...updatedMessages,
+          ...messages.map((msg) => ({ ...msg, newMsg: false })),
           { text: inputValue, isUser: true, newMsg: false },
-          {
-            text: response.data.split("$$$")[0],
-            isUser: false,
-            newMsg: true,
-          },
+          { text: response.data.split("$$$")[0], isUser: false, newMsg: true },
         ];
         setNewMessages(JSON.stringify(newMessages));
         setSuggestion(response.data.split("$$$")[1]);
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error sending message:", error);
     } finally {
       setIsSending(false);
       setInputValue("");
@@ -194,11 +172,11 @@ const Chatbot: React.FC = () => {
     }
   };
 
+  // Fetch available projects from backend
   const fetchProjects = async () => {
-    const currentUrl = window.location.href;
     try {
       const response = await axios.get("http://127.0.0.1:8000/fetchProjects/", {
-        params: { url: currentUrl },
+        params: { url: window.location.href },
       });
       setProject(response.data);
     } catch (error) {
@@ -206,37 +184,35 @@ const Chatbot: React.FC = () => {
     }
   };
 
+  // Handle file upload to backend
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     if (!file || !project.trim()) return;
 
     const formData = new FormData();
-    file.forEach((file) => {
-      formData.append("files", file);
-    });
-
+    file.forEach((file) => formData.append("files", file));
     formData.append("source", project);
     formData.append("url", window.location.href);
+
     try {
       await axios.post("http://127.0.0.1:8000/upload/", formData, {
         withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
       setProject("");
       setFile([]);
+      toast.success("Uploaded Successfully");
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {
       setIsLoading(false);
       setIsFileUpload(false);
-      toast.success("Uploaded Successfully");
     }
   };
 
+  // Use suggested question as input
   const sendSuggestedQuestion = () => {
     setInputValue(suggestion);
     setSuggestion("");
@@ -300,7 +276,7 @@ const Chatbot: React.FC = () => {
             >
               {!isFileUpload ? (
                 <button className="bin-button" onClick={clearChat}>
-                   <span className="tooltiptext">Clear Chat</span>
+                  <span className="tooltiptext">Clear Chat</span>
                   <svg
                     className="bin-top"
                     viewBox="0 0 39 7"

@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 
-def embedd_chunks(chunks ,model):    
+def embedd_chunks(chunks, model):    
     new_chunks = []
 
     for chunk in chunks:

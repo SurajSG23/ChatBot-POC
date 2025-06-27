@@ -4,51 +4,72 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 
 const RegistrationPage: React.FC = () => {
-  const [projectName, setProjectName] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [projectName, setProjectName] = useState<string>("");
+  const [websiteUrl, setWebsiteUrl] = useState<string>("");
   const [file, setFile] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<boolean>(false);
   const [isUploaded, setIsUploaded] = useState<boolean>(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(
-      "npm install react-icons react-speech-recognition axios framer-motion react-toastify"
-    );
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const dependencies =
+      "npm install react-icons react-speech-recognition axios framer-motion react-toastify";
+    navigator.clipboard
+      .writeText(dependencies)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((err) => {
+        console.error("Failed to copy text: ", err);
+        toast.error("Failed to copy dependencies");
+      });
   };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate inputs
+    if (!file.length || !projectName.trim()) {
+      toast.error("Please select files and enter a project name");
+      return;
+    }
+
     setIsLoading(true);
-    if (!file || !projectName.trim()) return;
-
-    const formData = new FormData();
-    file.forEach((file) => {
-      formData.append("files", file);
-    });
-
-    formData.append("source", projectName);
-    formData.append("url", websiteUrl);
 
     try {
-      await axios.post("http://127.0.0.1:8000/upload/", formData, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      const formData = new FormData();
+      file.forEach((file) => {
+        formData.append("files", file);
       });
+      formData.append("source", projectName);
+      formData.append("url", websiteUrl);
 
+      const response = await axios.post(
+        "http://127.0.0.1:8000/upload/",
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      // Reset form on success
       setProjectName("");
       setFile([]);
-    } catch (error) {
-      console.error("Upload failed:", error);
-    } finally {
-      setIsLoading(false);
-      toast.success("Uploaded Successfully");
       setWebsiteUrl("");
       setIsUploaded(true);
+
+      toast.success("Files uploaded successfully!");
+      return response.data;
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload files");
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

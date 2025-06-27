@@ -1,14 +1,13 @@
-def split_text(text):
-    chunk_size=500
-    overlap=100
+def split_text(text: str, chunk_size: int = 500, overlap: int = 100) -> list[str]:
+    
     words = text.split()
     chunks = []
-    start = 0
-
-    while start < len(words):
+    
+    if overlap >= chunk_size:
+        raise ValueError("Overlap must be smaller than chunk size")
+    
+    for start in range(0, len(words), chunk_size - overlap):
         end = start + chunk_size
-        chunk = " ".join(words[start:end])
-        chunks.append(chunk)
-        start += chunk_size - overlap
-
+        chunks.append(" ".join(words[start:end]))
+    
     return chunks
